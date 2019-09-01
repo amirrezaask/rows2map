@@ -39,8 +39,8 @@ func convertSliceOfUintToString(s []uint8) string {
 	return string(output)
 }
 
-//ToMap makes array of maps from rows
-func ToMap(rs *sql.Rows) []map[string]interface{} {
+//ToMaps makes array of maps from rows
+func ToMaps(rs *sql.Rows) []map[string]interface{} {
 
 	cols, _ := rs.Columns()
 	cts, err := rs.ColumnTypes()
