@@ -5,23 +5,25 @@ import (
 	"reflect"
 	"strconv"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
-func convert(t reflect.Type, v reflect.Value) interface{} {
+func convert(t reflect.Type, v reflect.Value) (interface{}, error) {
 	switch t.String() {
 	case "sql.RawBytes":
-		return convertSliceOfUintToString(v.Interface().([]uint8))
+		return convertSliceOfUintToString(v.Interface().([]uint8)), nil
 	case "mysql.NullTime":
-		return v.Interface().(time.Time)
+		return v.Interface().(time.Time), nil
 	case "sql.NullInt64":
 		str := convertSliceOfUintToString(v.Interface().([]uint8))
 		i, err := strconv.Atoi(str)
 		if err != nil {
-			panic(err)
+			return nil, errors.Wrap(err, "error while converting from int for string")
 		}
-		return i
+		return i, nil
 	default:
-		return v.Interface()
+		return v.Interface(), nil
 	}
 }
 
@@ -40,7 +42,7 @@ func convertSliceOfUintToString(s []uint8) string {
 }
 
 //ToMaps makes array of maps from rows
-func ToMaps(rs *sql.Rows) []map[string]interface{} {
+func ToMaps(rs *sql.Rows) ([]map[string]interface{}, error) {
 
 	cols, _ := rs.Columns()
 	cts, err := rs.ColumnTypes()
@@ -63,11 +65,14 @@ func ToMaps(rs *sql.Rows) []map[string]interface{} {
 		m := make(map[string]interface{})
 		for i, colName := range cols {
 			val := *(columnPointers[i].(*interface{}))
-			val = convert(cts[i].ScanType(), reflect.ValueOf(val))
+			val, err = convert(cts[i].ScanType(), reflect.ValueOf(val))
+			if err != nil {
+				return nil, errors.Wrap(err, "error while converting from sql output to actual types")
+			}
 			m[colName] = val
 		}
 
 		result = append(result, m)
 	}
-	return result
+	return result, nil
 }

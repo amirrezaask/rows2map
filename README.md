@@ -1,4 +1,2 @@
 # row2map
-
-
-row2map creates a map from sql.Rows
+database/sql uses variadic pointers to Scan result into them, this approach is very mistake and error prone, row2map gives you simple abstraction over result of your sql queries. pass a *sql.Rows and get an array of maps as a result
